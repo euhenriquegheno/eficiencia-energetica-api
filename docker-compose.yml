@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  eficiencia-energetica-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL
+      - SPRING_DATASOURCE_USERNAME=RM557192
+      - SPRING_DATASOURCE_PASSWORD=040604
+      - SPRING_FLYWAY_ENABLED=true
+      - JAVA_TOOL_OPTIONS=-Dspring.datasource.hikari.connectionTimeout=60000 -Dspring.datasource.hikari.initializationFailTimeout=120000
+    depends_on:
+      oracle-db:
+        condition: service_healthy
+    networks:
+      - esg-network
+
+  oracle-db:
+    image: gvenzl/oracle-xe:21-slim-faststart
+    ports:
+      - "1521:1521"
+    environment:
+      - ORACLE_PASSWORD=040604
+      - APP_USER=RM557192
+      - APP_USER_PASSWORD=040604
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 1m30s
+      timeout: 10s
+      retries: 3
+      start_period: 5m
+    networks:
+      - esg-network
+
+networks:
+  esg-network:
+    driver: bridge
+
